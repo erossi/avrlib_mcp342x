@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2017 Enrico Rossi
+/* Copyright (C) 2015-2018 Enrico Rossi
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,8 @@
  * Wait at least 300us before start.
  *
  * \ingroup sleep_group
- * MCP342x do not need to be suspended.
+ * MCP342x do not need to be suspended, but if
+ * I2C must be suspended, then this should be as well.
  *
  * \bug initialization errors missing.
  */
@@ -44,13 +45,14 @@ MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
 	// the status.
 	i2c.rx(4, &buffer);
 
-	// get the status register
+	// extract the status register
 	sreg = buffer[2];
 
-	// set the 1st byte of the buffer
+	// Initialize the device by set
+	// the 1st byte of the buffer and
 	buffer[0] = MCP342X_REG_INIT;
 
-	// send it to the device
+	// send it
 	i2c.tx(1, &buffer);
 }
 
@@ -72,7 +74,7 @@ void MCP342x::resume(void)
  *
  * \param channel channel to read (1, 2).
  * \return the value read
- * \bug Missing error handling
+ * \bug Missing error handling, value always returned!
  */
 uint16_t MCP342x::read(const uint8_t channel)
 {
@@ -87,11 +89,10 @@ uint16_t MCP342x::read(const uint8_t channel)
 			buffer[0] = MCP342X_REG_START_CH1;
 	}
 
-	// start conversion.
-	i2c.tx(1, &buffer);
+	i2c.tx(1, &buffer); // start conversion.
 
 	if (!i2c.BusError())
-		/* loop an arbitray number of retry */
+		// loop an arbitray number of retry
 		for (uint8_t i=0; i<5; i++) {
 			i2c.rx(4, &buffer); // read 4 byte
 			sreg = buffer[2]; // extract the status register
@@ -99,7 +100,7 @@ uint16_t MCP342x::read(const uint8_t channel)
 			if (i2c.BusError())
 				i = 5; // terminate
 			else
-				// data ready?
+				// data ready? (bit 7 of sreg)
 				if (sreg & _BV(7)) {
 					_delay_ms(100); // NOT ready, wait.
 				} else {

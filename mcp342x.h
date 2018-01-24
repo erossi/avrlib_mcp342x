@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2017 Enrico Rossi
+/* Copyright (C) 2015-2018 Enrico Rossi
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,13 @@
  */
 
 /*!
-\file mcp342x.h
-\page mcp342x Advanced usage and diagnostic.
-\author Enrico Rossi.
-\copyright GNU Lesser General Public License.
-\version Sep. 2015
-
-\bug This functions allocate permanent struct, do not shut.
-
-\section i2c Works with I2C bus.
-
+ * \file mcp342x.h
+ * \page mcp342x Advanced usage and diagnostic.
+ * \author Enrico Rossi.
+ * \copyright GNU Lesser General Public License.
+ * \version Sep. 2015
+ *
+ * \section i2c Works with I2C bus.
  */
 
 #ifndef _MCP_342x_
@@ -34,7 +31,7 @@
 
 #include "i2c.h"
 
-/*! default device address 0b1101000[0/1] */
+//! default device address 0b1101000[0/1]
 #define MCP342X_ADDR 0xd0
 
 /*! Register setup:
@@ -43,14 +40,16 @@
  * 1x gain.
  */
 #define MCP342X_REG_INIT 0x08
-/*! Start a sample on the channel 1 */
+
+//! Start a sample on the channel 1
 #define MCP342X_REG_START_CH1 (MCP342X_REG_INIT | _BV(7))
-/*! Start a sample on the channel 2 */
+
+//! Start a sample on the channel 2
 #define MCP342X_REG_START_CH2 (MCP342X_REG_INIT | _BV(7) | _BV(5))
 
 class MCP342x {
 	private:
-		uint8_t sreg;
+		uint8_t sreg; // status register
 		uint16_t value;
 		I2C i2c {address}; // i2c bus
 		const uint8_t address; // i2c address
