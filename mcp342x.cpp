@@ -31,11 +31,10 @@
  * Single shot mode, stop bit.
  * Wait at least 300us before start.
  *
- * \ingroup sleep_group
  * MCP342x do not need to be suspended, but if
  * I2C must be suspended, then this should be as well.
  *
- * \bug initialization errors missing.
+ * \bug check the status register to check the device.
  */
 MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
 {
@@ -43,26 +42,37 @@ MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
 
 	// Read 4 byte from the device to acquire
 	// the status.
-	i2c.rx(4, &buffer);
+	i2c.rx(4, (uint8_t *) &buffer);
 
-	// extract the status register
-	sreg = buffer[2];
+	if (i2c.error()) {
+		error_ |= (1 << MCP342X_ERR_I2C);
+	} else {
+		sreg = buffer[2]; // extract the status register
 
-	// Initialize the device by set
-	// the 1st byte of the buffer and
-	buffer[0] = MCP342X_REG_INIT;
+		// Initialize the device by set
+		// the 1st byte of the buffer.
+		buffer[0] = MCP342X_REG_INIT;
+		i2c.tx(1, (uint8_t *) &buffer); // send it
 
-	// send it
-	i2c.tx(1, &buffer);
+		if (i2c.error())
+			error_ |= (1 << MCP342X_ERR_I2C);
+	}
+
+	if (error_)
+		error_ |= (1 << MCP342X_ERR_INI);
 }
 
 //! Suspend
+//
+// Suspend i2c bus.
 void MCP342x::suspend(void)
 {
 	i2c.suspend();
 }
 
 //! Resume
+//
+// Resume I2C bus.
 void MCP342x::resume(void)
 {
 	i2c.resume();
@@ -91,23 +101,26 @@ uint16_t MCP342x::read(const uint8_t channel)
 
 	i2c.tx(1, &buffer); // start conversion.
 
-	if (!i2c.BusError())
+	if (i2c.error())
+		error_ |= (1 << MCP342X_ERR_I2C);
+	else
 		// loop an arbitray number of retry
 		for (uint8_t i=0; i<5; i++) {
 			i2c.rx(4, &buffer); // read 4 byte
 			sreg = buffer[2]; // extract the status register
 
-			if (i2c.BusError())
+			if (i2c.error()) {
+				error_ |= (1 << MCP342X_ERR_I2C);
 				i = 5; // terminate
-			else
+			} else {
 				// data ready? (bit 7 of sreg)
 				if (sreg & _BV(7)) {
 					_delay_ms(100); // NOT ready, wait.
 				} else {
-					// swap the MSB/LSB
-					value = buffer[0] << 8 | buffer[1];
+					value = buffer[0] << 8 | buffer[1]; // swap MSB/LSB
 					i = 5; // exit
 				}
+			}
 		}
 
 	return(value);

@@ -18,7 +18,7 @@
 
 /*!
  * \file mcp342x.h
- * \page mcp342x Advanced usage and diagnostic.
+ * \page mcp342x ADC usage and diagnostic.
  * \author Enrico Rossi.
  * \copyright GNU Lesser General Public License.
  * \version Sep. 2015
@@ -47,15 +47,23 @@
 //! Start a sample on the channel 2
 #define MCP342X_REG_START_CH2 (MCP342X_REG_INIT | _BV(7) | _BV(5))
 
+// Errors
+//! I2C bus Error
+#define MCP342X_ERR_I2C 0
+//! Initialization error
+#define MCP342X_ERR_INI 1
+
 class MCP342x {
 	private:
-		uint8_t sreg; // status register
+		uint8_t sreg; //! status register
 		uint16_t value;
-		I2C i2c {address}; // i2c bus
-		const uint8_t address; // i2c address
+		uint8_t error_; //! object error.
+		I2C i2c {address}; //! i2c bus object
+		const uint8_t address; //! i2c address
 
 	public:
 		MCP342x(uint8_t); // constructor
+		uint8_t error(void) { return(error_); }; //! errors
 		void suspend(void);
 		void resume(void);
 		uint16_t read(const uint8_t channel);
