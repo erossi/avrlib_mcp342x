@@ -1,4 +1,4 @@
-# lib_mcp342x
+# avrlib_mcp342x
 Microchip mcp3425/6 library.
 
 16-Bit Analog-to-Digital Converter with
@@ -7,10 +7,9 @@ Microchip mcp3425/6 library.
 Currently initialize and one shot convert with
 the hardcoded setup.
 
-## Depends on a I2C library.
+## Depends on a I2C library (submodule).
 
-The I2C files are from:
-https://github.com/erossi/avrlib_i2c
+Initialize the I2C sub-module.
 
 ## Missing part
  * API Doxygen doc
