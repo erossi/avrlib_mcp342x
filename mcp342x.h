@@ -62,10 +62,8 @@ class MCP342x {
 		const uint8_t address; //! i2c address
 
 	public:
-		MCP342x(uint8_t); // constructor
+		MCP342x(uint8_t = MCP342X_ADDR); // constructor
 		uint8_t error(void) { return(error_); }; //! errors
-		void suspend(void);
-		void resume(void);
 		uint16_t read(const uint8_t channel);
 };
 

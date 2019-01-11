@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2018 Enrico Rossi
+/* Copyright (C) 2015-2019 Enrico Rossi
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,13 +36,13 @@
  *
  * \bug check the status register to check the device.
  */
-MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
+MCP342x::MCP342x(uint8_t addr) : address{addr}
 {
 	uint8_t buffer[4];
 
 	// Read 4 byte from the device to acquire
 	// the status.
-	i2c.rx(4, (uint8_t *) &buffer);
+	i2c.mrm(4, (uint8_t *) &buffer);
 
 	if (i2c.error()) {
 		error_ |= (1 << MCP342X_ERR_I2C);
@@ -52,7 +52,7 @@ MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
 		// Initialize the device by set
 		// the 1st byte of the buffer.
 		buffer[0] = MCP342X_REG_INIT;
-		i2c.tx(1, (uint8_t *) &buffer); // send it
+		i2c.mtm(1, (uint8_t *) &buffer); // send it
 
 		if (i2c.error())
 			error_ |= (1 << MCP342X_ERR_I2C);
@@ -60,22 +60,6 @@ MCP342x::MCP342x(uint8_t addr = MCP342X_ADDR) : address{addr}
 
 	if (error_)
 		error_ |= (1 << MCP342X_ERR_INI);
-}
-
-//! Suspend
-//
-// Suspend i2c bus.
-void MCP342x::suspend(void)
-{
-	i2c.suspend();
-}
-
-//! Resume
-//
-// Resume I2C bus.
-void MCP342x::resume(void)
-{
-	i2c.resume();
 }
 
 /*! Read the channel value.
@@ -99,14 +83,14 @@ uint16_t MCP342x::read(const uint8_t channel)
 			buffer[0] = MCP342X_REG_START_CH1;
 	}
 
-	i2c.tx(1, &buffer); // start conversion.
+	i2c.mtm(1, (uint8_t *) &buffer); // start conversion.
 
 	if (i2c.error())
 		error_ |= (1 << MCP342X_ERR_I2C);
 	else
 		// loop an arbitray number of retry
 		for (uint8_t i=0; i<5; i++) {
-			i2c.rx(4, &buffer); // read 4 byte
+			i2c.mrm(4, (uint8_t *) &buffer); // read 4 byte
 			sreg = buffer[2]; // extract the status register
 
 			if (i2c.error()) {
