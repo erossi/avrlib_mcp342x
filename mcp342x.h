@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2018 Enrico Rossi
+/* Copyright (C) 2015-2020 Enrico Rossi
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,17 +17,16 @@
  */
 
 /*!
- * \file mcp342x.h
+ * \file
  * \page mcp342x ADC usage and diagnostic.
  * \author Enrico Rossi.
  * \copyright GNU Lesser General Public License.
- * \version Sep. 2015
  *
  * \section i2c Works with I2C bus.
  */
 
-#ifndef _MCP_342x_
-#define _MCP_342x_
+#ifndef _MCP342X_H_
+#define _MCP342X_H_
 
 #include "i2c.h"
 
@@ -42,29 +41,29 @@
 #define MCP342X_REG_INIT 0x08
 
 //! Start a sample on the channel 1
-#define MCP342X_REG_START_CH1 (MCP342X_REG_INIT | _BV(7))
+#define MCP342X_REG_START_CH1 (MCP342X_REG_INIT | (1 << 7))
 
 //! Start a sample on the channel 2
-#define MCP342X_REG_START_CH2 (MCP342X_REG_INIT | _BV(7) | _BV(5))
+#define MCP342X_REG_START_CH2 (MCP342X_REG_INIT | (1 << 7) | (1 << 5))
 
 // Errors
 //! I2C bus Error
-#define MCP342X_ERR_I2C 0
+#define MCP342X_EI2C 0
 //! Initialization error
-#define MCP342X_ERR_INI 1
+#define MCP342X_ENOINIT 1
 
 class MCP342x {
 	private:
-		uint8_t sreg; //! status register
-		uint16_t value;
-		uint8_t error_; //! object error.
-		I2C i2c {address}; //! i2c bus object
-		const uint8_t address; //! i2c address
-
+		static uint8_t initializers; // istances
+		static uint8_t sreg; //! status register
+		static uint8_t err; //! device error.
+		I2C i2c { MCP342X_ADDR }; //! i2c bus object
+		uint8_t channel;
 	public:
-		MCP342x(uint8_t = MCP342X_ADDR); // constructor
-		uint8_t error(void) { return(error_); }; //! errors
-		uint16_t read(const uint8_t channel);
+		MCP342x(uint8_t); // constructor
+		~MCP342x();
+		uint8_t error(); //! errors
+		uint16_t read();
 };
 
 #endif

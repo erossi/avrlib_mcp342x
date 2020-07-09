@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2019 Enrico Rossi
+/* Copyright (C) 2015-2020 Enrico Rossi
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,14 +17,21 @@
  */
 
 /*!
- * \file mcp342x.cpp
+ * \file
  *
+ * TBD
  */
 
 #include <stdlib.h>
 #include <util/delay.h>
 #include <avr/io.h>
 #include "mcp342x.h"
+
+/*! Static class initializations
+ */
+uint8_t MCP342x::initializers { 0 };
+uint8_t MCP342x::sreg { 0 };
+uint8_t MCP342x::err { 0 };
 
 /*! Initialize the device.
  *
@@ -36,43 +43,54 @@
  *
  * \bug check the status register to check the device.
  */
-MCP342x::MCP342x(uint8_t addr) : address{addr}
+MCP342x::MCP342x(uint8_t chan) : channel{ chan }
 {
 	uint8_t buffer[4];
 
-	// Read 4 byte from the device to acquire
-	// the status.
-	i2c.mrm(4, (uint8_t *) &buffer);
+	if (!initializers) {
+		// Read 4 byte from the device to acquire
+		// the status.
+		i2c.mrm(4, buffer);
 
-	if (i2c.error()) {
-		error_ |= (1 << MCP342X_ERR_I2C);
-	} else {
-		sreg = buffer[2]; // extract the status register
+		if (i2c.error()) {
+			err |= (1 << MCP342X_EI2C);
+		} else {
+			sreg = buffer[2]; // extract the status register
 
-		// Initialize the device by set
-		// the 1st byte of the buffer.
-		buffer[0] = MCP342X_REG_INIT;
-		i2c.mtm(1, (uint8_t *) &buffer); // send it
+			// Initialize the device by set
+			// the 1st byte of the buffer.
+			buffer[0] = MCP342X_REG_INIT;
+			i2c.mtm(1, buffer); // send it
 
-		if (i2c.error())
-			error_ |= (1 << MCP342X_ERR_I2C);
+			if (i2c.error())
+				err |= (1 << MCP342X_EI2C);
+		}
+
+		if (err)
+			err |= (1 << MCP342X_ENOINIT);
 	}
 
-	if (error_)
-		error_ |= (1 << MCP342X_ERR_INI);
+	initializers++;
+}
+
+/*! Deregister the class
+ */
+MCP342x::~MCP342x()
+{
+	initializers--;
 }
 
 /*! Read the channel value.
  *
  * Loop 500ms in 5 read for the ADC conversion.
  *
- * \param channel channel to read (1, 2).
  * \return the value read
  * \bug Missing error handling, value always returned!
  */
-uint16_t MCP342x::read(const uint8_t channel)
+uint16_t MCP342x::read()
 {
 	uint8_t buffer[4];
+	uint16_t value { 0 };
 
 	// set the channel to read.
 	switch(channel) {
@@ -83,18 +101,18 @@ uint16_t MCP342x::read(const uint8_t channel)
 			buffer[0] = MCP342X_REG_START_CH1;
 	}
 
-	i2c.mtm(1, (uint8_t *) &buffer); // start conversion.
+	i2c.mtm(1, buffer); // start conversion.
 
 	if (i2c.error())
-		error_ |= (1 << MCP342X_ERR_I2C);
+		err |= (1 << MCP342X_EI2C);
 	else
 		// loop an arbitray number of retry
 		for (uint8_t i=0; i<5; i++) {
-			i2c.mrm(4, (uint8_t *) &buffer); // read 4 byte
+			i2c.mrm(4, buffer); // read 4 byte
 			sreg = buffer[2]; // extract the status register
 
 			if (i2c.error()) {
-				error_ |= (1 << MCP342X_ERR_I2C);
+				err |= (1 << MCP342X_EI2C);
 				i = 5; // terminate
 			} else {
 				// data ready? (bit 7 of sreg)
@@ -108,4 +126,11 @@ uint16_t MCP342x::read(const uint8_t channel)
 		}
 
 	return(value);
+}
+
+/*! Get the error
+*/
+uint8_t MCP342x::error()
+{
+	return(err);
 }
