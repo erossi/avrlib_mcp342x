@@ -29,9 +29,45 @@
 
 /*! Static class initializations
  */
-uint8_t MCP342x::initializers { 0 };
+uint8_t MCP342x::requester { 0 };
+uint8_t MCP342x::enabler { 0 };
 uint8_t MCP342x::sreg { 0 };
 uint8_t MCP342x::err { 0 };
+
+/*! Create the device.
+ *
+ * MCP342x do not need to be suspended, but if
+ * I2C must be suspended, then this should be as well.
+ *
+ * \param chan the channel to use.
+ * \param i initialize the device.
+ *
+ * \warning On some installations using the I2C bus before some
+ * setups may crash the system. Here this device can be
+ * created without access the I2C bus.
+ *
+ * \bug check the status register to check the device.
+ */
+MCP342x::MCP342x(uint8_t chan, bool i) : channel{ chan }
+{
+	if (i)
+		resume();
+
+	requester++;
+}
+
+/*! Deregister the class
+ *
+ * If this device has already initialized, then remove it also
+ * from the initializers.
+ */
+MCP342x::~MCP342x()
+{
+	requester--;
+
+	if (status)
+		suspend();
+}
 
 /*! Initialize the device.
  *
@@ -43,11 +79,11 @@ uint8_t MCP342x::err { 0 };
  *
  * \bug check the status register to check the device.
  */
-MCP342x::MCP342x(uint8_t chan) : channel{ chan }
+void MCP342x::resume()
 {
 	uint8_t buffer[4];
 
-	if (!initializers) {
+	if (!enabler) {
 		// Read 4 byte from the device to acquire
 		// the status.
 		i2c.mrm(4, buffer);
@@ -70,14 +106,19 @@ MCP342x::MCP342x(uint8_t chan) : channel{ chan }
 			err |= (1 << MCP342X_ENOINIT);
 	}
 
-	initializers++;
+	enabler++; // register this initializers
+	status = true; // record this init.
 }
 
-/*! Deregister the class
+/*! De-register the device.
+ *
+ * Not much to do to de-register the device, just deregister
+ * from the devices.
  */
-MCP342x::~MCP342x()
+void MCP342x::suspend()
 {
-	initializers--;
+	if (status)
+		enabler--;
 }
 
 /*! Read the channel value.

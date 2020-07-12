@@ -54,14 +54,18 @@
 
 class MCP342x {
 	private:
-		static uint8_t initializers; // istances
+		static uint8_t requester; // devices created
+		static uint8_t enabler; // devices enabled
 		static uint8_t sreg; //! status register
 		static uint8_t err; //! device error.
 		I2C i2c { MCP342X_ADDR }; //! i2c bus object
 		uint8_t channel;
+		bool status; // This device has been initialized?
 	public:
-		MCP342x(uint8_t); // constructor
+		MCP342x(uint8_t, bool = true); // constructor
 		~MCP342x();
+		void resume(); // Initialize the device
+		void suspend();
 		uint8_t error(); //! errors
 		uint16_t read();
 };
