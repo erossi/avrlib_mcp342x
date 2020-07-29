@@ -33,6 +33,13 @@
 //! default device address 0b1101000[0/1]
 #define MCP342X_ADDR 0xd0
 
+/*! default I2C timeout msec
+ *
+ * a timeout on the bus shouldn't happen, but just in case
+ * to avoid blocking situation.
+ */
+#define MCP342X_TIMEOUT 500
+
 /*! Register setup:
  * One Shot
  * 16 bit resolution
@@ -58,11 +65,11 @@ class MCP342x {
 		static uint8_t enabler; // devices enabled
 		static uint8_t sreg; //! status register
 		static uint8_t err; //! device error.
-		I2C i2c { MCP342X_ADDR }; //! i2c bus object
+		I2C i2c { MCP342X_ADDR, MCP342X_TIMEOUT }; //! i2c bus
 		uint8_t channel;
 		bool status; // This device has been initialized?
 	public:
-		MCP342x(uint8_t, bool = true); // constructor
+		MCP342x(uint8_t, bool = true);
 		~MCP342x();
 		void resume(); // Initialize the device
 		void suspend();

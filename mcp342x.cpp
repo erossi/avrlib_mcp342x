@@ -47,6 +47,8 @@ uint8_t MCP342x::err { 0 };
  * created without access the I2C bus.
  *
  * \bug check the status register to check the device.
+ * \bug on the datasheet a general reset and latch should be
+ * performed during the initialization.
  */
 MCP342x::MCP342x(uint8_t chan, bool i) : channel{ chan }
 {
